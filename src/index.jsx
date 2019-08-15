@@ -1,3 +1,8 @@
+// tslint:disable: linebreak-style
+// tslint:disable: one-line
+// tslint:disable: no-console
+// tslint:disable: triple-equals
+
 import {
   Composite,
   contentView,
@@ -19,12 +24,19 @@ import {
   Action
   } from 'tabris';
 
+import {
+  MyTextInput
+} from './MyTextInput';
+
+var passwords = {};
+const passwordFile = fs.filesDir + '/MyPasswords.txt';
+
 const addAction = <Action placement='default' title='Add' onSelect={() => openEditPage('')}/>;
 const navigationView =
 <NavigationView stretch drawerActionVisible>
 </NavigationView>;
 const listPage =
-<Page title='My Passwords' onAppear={() => addAction.appendTo(navigationView)} onDisappear={() => addAction.detach()}>
+<Page title='My Passwords' onAppear={() => {navigationView.find(Action).detach(); addAction.appendTo(navigationView); }}>
 <Stack stretch alignment='stretchX' padding={16} spacing={16}>
   <Composite>
     <TextView left text='Search:' centerY width={50}/>
@@ -38,42 +50,46 @@ const listPage =
 </Page>;
 
 const editAction =
-  <Action title='Edit' onSelect={() => {navigationView.pageAnimation = 'none'; viewPage.detach(); openEditPage(viewPage.passwordId); navigationView.pageAnimation = 'default';}}/>;
+  <Action title='Edit' onSelect={() => openEditPage(editPage.passwordId)}/>;
 const saveAction =
   <Action title='Save' onSelect={() => savePassword(editPage)}/>;
 const deleteAction =
   <Action title='Delete' onSelect={() => confirmDelete(editPage.passwordId, () => editPage.detach())}/>;
 
 const editPage =
-<Page id='editPasswordPage' autoDispose={false} onAppear={() => saveAction.appendTo(navigationView)} onDisappear={() => {saveAction.detach(); deleteAction.detach(); }}>
-  <Stack stretch alignment='stretchX' padding={16} spacing={16}>
-    <Composite>
-      <TextView alignment='right' left centerY width={80} text="Name: "/>
-      <TextInput left='prev() 16' right centerY id='name' />
-    </Composite>
-    <Composite>
-      <TextView alignment='right' left centerY width={80} text="URL: "/>
-      <TextInput left='prev() 16' right centerY keyboard='url' id='url' />
-    </Composite>
-    <Composite>
-      <TextView alignment='right' left centerY width={80} text="Account: "/>
-      <TextInput left='prev() 16' right centerY id='account' />
-    </Composite>
-    <Composite>
-      <TextView alignment='right' left centerY width={80} text="Password: "/>
-      <TextInput left='prev() 16' right='next() 16' centerY type='password' id='password' />
-      <CheckBox text='Show' right centerY onCheckedChanged={showPasswordClicked}/>
-    </Composite>
-    <Composite>
-      <TextView alignment='right' left width={80} text="Note: "/>
-      <TextInput left='prev() 16' right height={100} type='multiline' id='note' />
-    </Composite>
-    <Composite>
-      <TextView alignment='right' left centerY width={80} text="Modified: "/>
-      <TextView left='prev() 16' right centerY id='timestamp'/>
-    </Composite>
-  </Stack>
-  </Page>;
+<Page id='editPasswordPage' autoDispose={false} background='#eee'>
+  <ScrollView stretch>
+    <Stack stretch alignment='stretchX' padding={0} spacing={1}>
+        <Stack spacing={1} background='#fff' padding={8}>
+          <TextView stretchX text="Name" textColor='#777' font='12px' background='#fff'/>
+          <TextInput stretchX id='name' font='18px' borderColor='#fff'/>
+        </Stack>
+        <Stack spacing={1} background='#fff' padding={8}>
+          <TextView stretchX text="URL" textColor='#777' font='12px' background='#fff'/>
+          <TextInput stretchX keyboard='url' id='url'  font='18px' borderColor='#fff'/>
+        </Stack>
+        <Stack spacing={1} background='#fff' padding={8}>
+          <TextView stretchX text="Account" textColor='#777' font='12px' background='#fff'/>
+          <TextInput stretchX id='account'  font='18px' borderColor='#fff'/>
+        </Stack>
+        <Stack spacing={1} background='#fff' padding={8}>
+          <TextView stretchX text="Password" textColor='#777' font='12px' background='#fff'/>
+          <Composite stretchX>
+            <TextInput left right='next() 8' type='password' id='password' font='18px' borderColor='#fff'/>
+            <CheckBox text='Show' right centerY onCheckedChanged={showPasswordClicked}/>
+          </Composite>
+        </Stack>
+        <Stack spacing={1} background='#fff' padding={8}>
+          <TextView stretchX text="Note" textColor='#777' font='12px' background='#fff'/>
+          <TextInput stretchX height={100} type='multiline' id='note' borderColor='#fff'/>
+        </Stack>
+        <Composite background='#fff' padding={8}>
+          <TextView left centerY width={70} text="Modified: "/>
+          <TextView left='prev() 16' right centerY id='timestamp'/>
+        </Composite>
+    </Stack>
+  </ScrollView>
+</Page>;
 
 const viewPage =
 <Page id='viewPasswordPage' title='Password' autoDispose={false} onAppear={() => editAction.appendTo(navigationView)} onDisappear={() => editAction.detach()}>
@@ -107,20 +123,32 @@ const viewPage =
   </Page>;
 
 contentView.append(navigationView.append(listPage));
+
 drawer.enabled = true;
 drawer.append(
-  <$>
-    <TextView>Sync with Google Drive</TextView>
-  </$>
+  <Stack padding={16} spacing={16}>
+    <TextView text='Sync with Google Drive' font='20px'/>
+    <TextView onTap={() => clearPasswords()} text='Delete all passwords' font='20px'/>
+  </Stack>
 );
-var passwords = {};
-const passwordFile = fs.filesDir + '/MyPasswords.txt';
 
-function openEditPage(passwordId)
+async function clearPasswords()
 {
-  navigationView.append(editPage);
+  const dialog = <AlertDialog buttons={{ ok: "Confirm", cancel: "Cancel" }} title='Delete all passwords'>Are you sure to delete all passwords?</AlertDialog>;
+  dialog.open();
+  const {button} = await dialog.onClose.promise();
+  if (button == 'ok')
+  {
+    passwords = {};
+    fs.removeFile(passwordFile);
+  }
+  listPasswords();
+}
+
+function fillEditPage(passwordId)
+{
   editPage.passwordId = passwordId;
-  if( (passwordId != '') && (passwords[passwordId] != undefined) )
+  if (passwordId && passwords[passwordId])
   {
     const password = passwords[passwordId];
     editPage.find('#name').only().text = password.name;
@@ -129,8 +157,6 @@ function openEditPage(passwordId)
     editPage.find('#password').only().text = password.password;
     editPage.find('#note').only().text = password.note;
     editPage.find('#timestamp').only().text = (new Date(password.timestamp)).toLocaleString();
-    editPage.title = 'Edit Password';
-    deleteAction.insertAfter(saveAction);
   }
   else
   {
@@ -141,28 +167,46 @@ function openEditPage(passwordId)
     editPage.find('#password').only().text = '';
     editPage.find('#note').only().text = '';
     editPage.find('#timestamp').only().text = '';
+  }
+}
+
+function openEditPage(passwordId)
+{
+  fillEditPage(passwordId);
+  editPage.find(TextInput).set({editable: true});
+  navigationView.find(Action).detach();
+  navigationView.append(saveAction);
+  if (passwordId && passwords[passwordId])
+  {
+    editPage.title = 'Edit Password';
+    navigationView.append(
+      <Action placement='navigation' title='Cancel' onSelect={() => openViewPage(passwordId)}/>
+    );
+    deleteAction.insertAfter(saveAction);
+  }
+  else
+  {
     editPage.title = 'New Password';
-    editPage.find('#delete').dispose();
+  }
+  editPage.find(TextInput).set({borderColor: '#ccc'});
+  if (!editPage.parent())
+  {
+    navigationView.append(editPage);
   }
 }
 
 function openViewPage(passwordId)
 {
-  
-  navigationView.append(viewPage);
-  viewPage.passwordId = passwordId;
-  if( (passwordId != '') && (passwords[passwordId] != undefined) )
+  fillEditPage(passwordId);
+  editPage.find(TextInput).set({editable: false});
+  editPage.title = 'Password';
+  navigationView.find(Action).detach();
+  navigationView.append(editAction);
+  editPage.find(TextInput).set({borderColor: '#fff'});
+  if (!editPage.parent())
   {
-    const password = passwords[passwordId];
-    viewPage.find('#name').only().text = password.name;
-    viewPage.find('#url').only().text = password.url;
-    viewPage.find('#account').only().text = password.account;
-    viewPage.find('#password').only().text = password.password;
-    viewPage.find('#note').only().text = password.note;
-    viewPage.find('#timestamp').only().text = (new Date(password.timestamp)).toLocaleString();
+    navigationView.append(editPage);
   }
-  
-  //openEditPage(passwordId);
 }
 
 function uuidv4() {
@@ -179,14 +223,14 @@ function newID()
 
 (function readPasswordFile()
 {
-  fs.readFile(passwordFile,'utf-8')
+  fs.readFile(passwordFile, 'utf-8')
     .then(value => { passwords = JSON.parse(value); listPasswords(); })
     .catch(error => console.error(error));
 })();
 
 function writePasswordFile()
 {
-  fs.writeFile(passwordFile,JSON.stringify(passwords),'utf-8')
+  fs.writeFile(passwordFile, JSON.stringify(passwords), 'utf-8')
     .then(() => console.log("File written successfully."))
     .catch(error => console.error(error));
 }
@@ -211,17 +255,25 @@ function savePassword(page)
     return;
   }
   var passwordId = page.passwordId;
+  var newPassword = false;
   if(passwordId == '' || passwordId == undefined)
   {
     passwordId = newID();
+    newPassword = true;
   }
   passwords[passwordId] = password;
 
   console.log(passwords);
   writePasswordFile();
-
   listPasswords();
-  editPage.detach();
+  if (newPassword)
+  {
+    editPage.detach();
+  }
+  else
+  {
+    openViewPage(passwordId);
+  }
 }
 
 function deletePassword(id)
@@ -260,10 +312,10 @@ async function confirmDelete(passwordId, callback)
   </AlertDialog>;
   dialog.open();
   const {button} = await dialog.onClose.promise();
-  if(button == 'ok')
+  if (button == 'ok')
   {
       deletePassword(passwordId);
-      if(callback != undefined)
+      if (callback != undefined)
       {
         callback();
       }
