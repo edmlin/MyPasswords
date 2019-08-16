@@ -1,6 +1,3 @@
-// tslint:disable: linebreak-style
-// tslint:disable: one-line
-// tslint:disable: no-console
 // tslint:disable: triple-equals
 
 import {
@@ -25,8 +22,8 @@ import {
   } from 'tabris';
 
 import {
-  MyTextInput
-} from './MyTextInput';
+  GoogleAuth
+} from './SyncGoogle';
 
 var passwords = {};
 const passwordFile = fs.filesDir + '/MyPasswords.txt';
@@ -127,7 +124,7 @@ contentView.append(navigationView.append(listPage));
 drawer.enabled = true;
 drawer.append(
   <Stack padding={16} spacing={16}>
-    <TextView text='Sync with Google Drive' font='20px'/>
+    <TextView text='Sync with Google Drive' onTap={() => GoogleAuth(navigationView)} font='20px'/>
     <TextView onTap={() => clearPasswords()} text='Delete all passwords' font='20px'/>
   </Stack>
 );
@@ -256,7 +253,7 @@ function savePassword(page)
   }
   var passwordId = page.passwordId;
   var newPassword = false;
-  if(passwordId == '' || passwordId == undefined)
+  if (passwordId == '' || passwordId == undefined)
   {
     passwordId = newID();
     newPassword = true;
@@ -286,7 +283,7 @@ function deletePassword(id)
 function listPasswords()
 {
   $('#passwordList').children().dispose();
-  for(var id in passwords)
+  for (const id in passwords)
   {
     $('#passwordList').only().append(passwordLink(id));
   }
@@ -301,9 +298,8 @@ function passwordLink(passwordId)
       </Button>
       <Button width={40} right onSelect={() => confirmDelete(passwordId)}>X</Button>
     </Composite>
-  )
+  );
 }
-
 async function confirmDelete(passwordId, callback)
 {
   const dialog =
@@ -322,7 +318,7 @@ async function confirmDelete(passwordId, callback)
   }
 }
 
-function showPasswordClicked(event) 
+function showPasswordClicked(event)
 {
   event.target.siblings().last().revealPassword = event.value;
 }

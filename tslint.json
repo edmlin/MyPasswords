@@ -11,7 +11,7 @@
     "indent": false,
     "max-line-length": [false],
     "forin": false,
-    "linebreak-style": false,
+    "linebreak-style": [false],
     "prefer-const": false,
     "interface-name": [false],
     "await-promise": true,
@@ -43,7 +43,9 @@
     "only-arrow-functions": [true, "allow-declarations", "allow-named-functions"],
     "promise-function-async": true,
     "encoding": true,
-    "linebreak-style": [true, "LF"],
-    "no-invalid-this": true
+    "linebreak-style": [false],
+    "no-invalid-this": true,
+    "one-line": false,
+    "no-console": false
   }
 }
